@@ -63,7 +63,7 @@
 			<span
 				class="tooltipped tooltipped-n tooltipped-no-touch"
 				:aria-label="
-					store.state.serverConfiguration?.isUpdateAvailable
+					store.serverConfiguration?.isUpdateAvailable
 						? 'Help\n(update available)'
 						: 'Help'
 				"
@@ -78,7 +78,7 @@
 						:class="[
 							'icon',
 							'help',
-							{notified: store.state.serverConfiguration?.isUpdateAvailable},
+							{notified: store.serverConfiguration?.isUpdateAvailable},
 							{active: isActive},
 						]"
 						@click="navigate"
@@ -89,181 +89,162 @@
 	</aside>
 </template>
 
-<script lang="ts">
-import {defineComponent, nextTick, onMounted, onUnmounted, PropType, ref} from "vue";
+<script setup lang="ts">
+import {nextTick, onMounted, onUnmounted, ref} from "vue";
 import {useRoute} from "vue-router";
-import {useStore} from "../js/store";
+import {useMainStore} from "../stores/main";
 import NetworkList from "./NetworkList.vue";
 
-export default defineComponent({
-	name: "Sidebar",
-	components: {
-		NetworkList,
-	},
-	props: {
-		overlay: {type: Object as PropType<HTMLElement | null>, required: true},
-	},
-	setup(props) {
-		const isDevelopment = process.env.NODE_ENV !== "production";
+const props = defineProps<{
+	overlay: HTMLElement | null;
+}>();
 
-		const store = useStore();
-		const route = useRoute();
+const isDevelopment = process.env.NODE_ENV !== "production";
 
-		const touchStartPos = ref<Touch | null>();
-		const touchCurPos = ref<Touch | null>();
-		const touchStartTime = ref<number>(0);
-		const menuWidth = ref<number>(0);
-		const menuIsMoving = ref<boolean>(false);
-		const menuIsAbsolute = ref<boolean>(false);
+const store = useMainStore();
+const route = useRoute();
 
-		const sidebar = ref<HTMLElement | null>(null);
+const touchStartPos = ref<Touch | null>();
+const touchCurPos = ref<Touch | null>();
+const touchStartTime = ref<number>(0);
+const menuWidth = ref<number>(0);
+const menuIsMoving = ref<boolean>(false);
+const menuIsAbsolute = ref<boolean>(false);
 
-		const toggle = (state: boolean) => {
-			store.commit("sidebarOpen", state);
-		};
+const sidebar = ref<HTMLElement | null>(null);
 
-		const onTouchMove = (e: TouchEvent) => {
-			const touch = (touchCurPos.value = e.touches.item(0));
+const toggle = (state: boolean) => {
+	store.setSidebarOpen(state);
+};
 
-			if (
-				!touch ||
-				!touchStartPos.value ||
-				!touchStartPos.value.screenX ||
-				!touchStartPos.value.screenY
-			) {
-				return;
-			}
+const onTouchEnd = () => {
+	if (!touchStartPos.value?.screenX || !touchCurPos.value?.screenX) {
+		return;
+	}
 
-			let distX = touch.screenX - touchStartPos.value.screenX;
-			const distY = touch.screenY - touchStartPos.value.screenY;
+	const diff = touchCurPos.value.screenX - touchStartPos.value.screenX;
+	const absDiff = Math.abs(diff);
 
-			if (!menuIsMoving.value) {
-				// tan(45°) is 1. Gestures in 0°-45° (< 1) are considered horizontal, so
-				// menu must be open; gestures in 45°-90° (>1) are considered vertical, so
-				// chat windows must be scrolled.
-				if (Math.abs(distY / distX) >= 1) {
-					// eslint-disable-next-line no-use-before-define
-					onTouchEnd();
-					return;
-				}
+	if (
+		absDiff > menuWidth.value / 2 ||
+		(Date.now() - touchStartTime.value < 180 && absDiff > 50)
+	) {
+		toggle(diff > 0);
+	}
 
-				const devicePixelRatio = window.devicePixelRatio || 2;
+	document.body.removeEventListener("touchmove", onTouchMove);
+	document.body.removeEventListener("touchend", onTouchEnd);
 
-				if (Math.abs(distX) > devicePixelRatio) {
-					store.commit("sidebarDragging", true);
-					menuIsMoving.value = true;
-				}
-			}
+	store.setSidebarDragging(false);
 
-			// Do not animate the menu on desktop view
-			if (!menuIsAbsolute.value) {
-				return;
-			}
+	touchStartPos.value = null;
+	touchCurPos.value = null;
+	touchStartTime.value = 0;
+	menuIsMoving.value = false;
 
-			if (store.state.sidebarOpen) {
-				distX += menuWidth.value;
-			}
+	void nextTick(() => {
+		if (sidebar.value) {
+			sidebar.value.style.transform = "";
+		}
 
-			if (distX > menuWidth.value) {
-				distX = menuWidth.value;
-			} else if (distX < 0) {
-				distX = 0;
-			}
+		if (props.overlay) {
+			props.overlay.style.opacity = "";
+		}
+	});
+};
 
-			if (sidebar.value) {
-				sidebar.value.style.transform = "translate3d(" + distX.toString() + "px, 0, 0)";
-			}
+const onTouchMove = (e: TouchEvent) => {
+	const touch = (touchCurPos.value = e.touches.item(0));
 
-			if (props.overlay) {
-				props.overlay.style.opacity = `${distX / menuWidth.value}`;
-			}
-		};
+	if (
+		!touch ||
+		!touchStartPos.value ||
+		!touchStartPos.value.screenX ||
+		!touchStartPos.value.screenY
+	) {
+		return;
+	}
 
-		const onTouchEnd = () => {
-			if (!touchStartPos.value?.screenX || !touchCurPos.value?.screenX) {
-				return;
-			}
+	let distX = touch.screenX - touchStartPos.value.screenX;
+	const distY = touch.screenY - touchStartPos.value.screenY;
 
-			const diff = touchCurPos.value.screenX - touchStartPos.value.screenX;
-			const absDiff = Math.abs(diff);
+	if (!menuIsMoving.value) {
+		// tan(45°) is 1. Gestures in 0°-45° (< 1) are considered horizontal, so
+		// menu must be open; gestures in 45°-90° (>1) are considered vertical, so
+		// chat windows must be scrolled.
+		if (Math.abs(distY / distX) >= 1) {
+			// eslint-disable-next-line no-use-before-define
+			onTouchEnd();
+			return;
+		}
 
-			if (
-				absDiff > menuWidth.value / 2 ||
-				(Date.now() - touchStartTime.value < 180 && absDiff > 50)
-			) {
-				toggle(diff > 0);
-			}
+		const devicePixelRatio = window.devicePixelRatio || 2;
 
-			document.body.removeEventListener("touchmove", onTouchMove);
-			document.body.removeEventListener("touchend", onTouchEnd);
+		if (Math.abs(distX) > devicePixelRatio) {
+			store.setSidebarDragging(true);
+			menuIsMoving.value = true;
+		}
+	}
 
-			store.commit("sidebarDragging", false);
+	// Do not animate the menu on desktop view
+	if (!menuIsAbsolute.value) {
+		return;
+	}
 
-			touchStartPos.value = null;
-			touchCurPos.value = null;
-			touchStartTime.value = 0;
-			menuIsMoving.value = false;
+	if (store.sidebarOpen) {
+		distX += menuWidth.value;
+	}
 
-			void nextTick(() => {
-				if (sidebar.value) {
-					sidebar.value.style.transform = "";
-				}
+	if (distX > menuWidth.value) {
+		distX = menuWidth.value;
+	} else if (distX < 0) {
+		distX = 0;
+	}
 
-				if (props.overlay) {
-					props.overlay.style.opacity = "";
-				}
-			});
-		};
+	if (sidebar.value) {
+		sidebar.value.style.transform = "translate3d(" + distX.toString() + "px, 0, 0)";
+	}
 
-		const onTouchStart = (e: TouchEvent) => {
-			if (!sidebar.value) {
-				return;
-			}
+	if (props.overlay) {
+		props.overlay.style.opacity = `${distX / menuWidth.value}`;
+	}
+};
 
-			touchStartPos.value = touchCurPos.value = e.touches.item(0);
+const onTouchStart = (e: TouchEvent) => {
+	if (!sidebar.value) {
+		return;
+	}
 
-			if (e.touches.length !== 1) {
-				onTouchEnd();
-				return;
-			}
+	touchStartPos.value = touchCurPos.value = e.touches.item(0);
 
-			const styles = window.getComputedStyle(sidebar.value);
+	if (e.touches.length !== 1) {
+		onTouchEnd();
+		return;
+	}
 
-			menuWidth.value = parseFloat(styles.width);
-			menuIsAbsolute.value = styles.position === "absolute";
+	const styles = window.getComputedStyle(sidebar.value);
 
-			if (
-				!store.state.sidebarOpen ||
-				(touchStartPos.value?.screenX && touchStartPos.value.screenX > menuWidth.value)
-			) {
-				touchStartTime.value = Date.now();
+	menuWidth.value = parseFloat(styles.width);
+	menuIsAbsolute.value = styles.position === "absolute";
 
-				document.body.addEventListener("touchmove", onTouchMove, {passive: true});
-				document.body.addEventListener("touchend", onTouchEnd, {passive: true});
-			}
-		};
+	if (
+		!store.sidebarOpen ||
+		(touchStartPos.value?.screenX && touchStartPos.value.screenX > menuWidth.value)
+	) {
+		touchStartTime.value = Date.now();
 
-		onMounted(() => {
-			document.body.addEventListener("touchstart", onTouchStart, {passive: true});
-		});
+		document.body.addEventListener("touchmove", onTouchMove, {passive: true});
+		document.body.addEventListener("touchend", onTouchEnd, {passive: true});
+	}
+};
 
-		onUnmounted(() => {
-			document.body.removeEventListener("touchstart", onTouchStart);
-		});
-
-		const isPublic = () => document.body.classList.contains("public");
-
-		return {
-			isDevelopment,
-			store,
-			route,
-			sidebar,
-			toggle,
-			onTouchStart,
-			onTouchMove,
-			onTouchEnd,
-			isPublic,
-		};
-	},
+onMounted(() => {
+	document.body.addEventListener("touchstart", onTouchStart, {passive: true});
 });
+
+onUnmounted(() => {
+	document.body.removeEventListener("touchstart", onTouchStart);
+});
+
+const isPublic = () => document.body.classList.contains("public");
 </script>

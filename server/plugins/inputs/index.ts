@@ -1,8 +1,8 @@
 import Client from "../../client";
 import log from "../../log";
-import Chan, { Channel } from "../../models/chan";
-import Network, { NetworkWithIrcFramework } from "../../models/network";
-import { PackageInfo } from "../packages";
+import Chan, {Channel} from "../../models/chan";
+import Network, {NetworkWithIrcFramework} from "../../models/network";
+import {PackageInfo} from "../packages";
 import PublicClient from "../packages/publicClient";
 
 export type PluginInputHandler = (
@@ -23,7 +23,7 @@ type ExternalPluginCommand = {
 	packageInfo: PackageInfo;
 	input: (
 		pub: PublicClient,
-		netChan: { network: Network; chan: Chan },
+		netChan: {network: Network; chan: Chan},
 		cmd: string,
 		args: string[]
 	) => void;
@@ -66,6 +66,7 @@ const builtInInputs = [
 	"nick",
 	"notice",
 	"notify",
+	"notifylist",
 	"part",
 	"quit",
 	"raw",

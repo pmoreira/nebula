@@ -29,6 +29,7 @@ describe("Client", function () {
 		commands: [],
 		ignoreList: [],
 		proxyHost: "",
+		notifyList: [],
 		proxyPort: 1080,
 		proxyUsername: "",
 		proxyEnabled: false,
@@ -47,7 +48,6 @@ describe("Client", function () {
 
 	it("should parse channel configuration", function () {
 		const manager = new ClientManager();
-		const channel: ChanConfig = {name: "AAAA!", type: "query"};
 		const networkConfig: NetworkConfig = {
 			...commonNetworkConfig,
 			channels: [{name: "AAAA!", type: "query"}, {name: "#thelounge"}, {name: "&foobar"}],
@@ -62,7 +62,7 @@ describe("Client", function () {
 
 		// The client would normally do it as part of client.connect();
 		// but this avoids the need to mock the irc-framework connection
-		const network = client.networkFromConfig(networkConfig);
+		const network = client.networkManager.validateNetworkConfig(networkConfig);
 
 		sinon.assert.notCalled(logWarnStub);
 
@@ -78,7 +78,6 @@ describe("Client", function () {
 
 	it("should ignore invalid channel types", function () {
 		const manager = new ClientManager();
-		const channel: ChanConfig = {name: "AAAA!", type: "query"};
 		const networkConfig: NetworkConfig = {
 			...commonNetworkConfig,
 			channels: [
@@ -97,7 +96,7 @@ describe("Client", function () {
 
 		// The client would normally do it as part of client.connect();
 		// but this avoids the need to mock the irc-framework connection
-		const network = client.networkFromConfig(networkConfig);
+		const network = client.networkManager.validateNetworkConfig(networkConfig);
 
 		sinon.assert.calledOnce(logWarnStub);
 

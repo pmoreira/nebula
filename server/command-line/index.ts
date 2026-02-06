@@ -8,7 +8,7 @@ import Helper from "../helper";
 import Config from "../config";
 import Utils from "./utils";
 
-const program = new Command("thelounge");
+const program = new Command("nebula");
 program
 	.version(Helper.getVersion(), "-v, --version")
 	.option(
@@ -21,7 +21,7 @@ program
 // Parse options from `argv` returning `argv` void of these options.
 const argvWithoutOptions = program.parseOptions(process.argv);
 
-Config.setHome(process.env.THELOUNGE_HOME || Utils.defaultHome());
+Config.setHome(process.env.NEBULA_HOME || Utils.defaultHome());
 
 // Check config file owner and warn if we're running under a different user
 try {
@@ -75,7 +75,7 @@ function createPackagesFolder() {
 				{
 					private: true,
 					description:
-						"Packages for The Lounge. Use `thelounge install <package>` command to add a package.",
+						"Packages for Nebula. Use `nebula install <package>` command to add a package.",
 					dependencies: {},
 				},
 				null,
@@ -94,7 +94,7 @@ function verifyFileOwner() {
 
 	if (uid === 0) {
 		log.warn(
-			`You are currently running The Lounge as root. ${colors.bold.red(
+			`You are currently running Nebula as root. ${colors.bold.red(
 				"We highly discourage running as root!"
 			)}`
 		);
@@ -103,15 +103,13 @@ function verifyFileOwner() {
 	const configStat = fs.statSync(path.join(Config.getHomePath(), "config.js"));
 
 	if (configStat && configStat.uid !== uid) {
+		log.warn("Config file owner does not match the user you are currently running Nebula as.");
 		log.warn(
-			"Config file owner does not match the user you are currently running The Lounge as."
-		);
-		log.warn(
-			"To prevent any issues, please run thelounge commands " +
+			"To prevent any issues, please run nebula commands " +
 				"as the correct user that owns the config folder."
 		);
 		log.warn(
-			"See https://thelounge.chat/docs/usage#using-the-correct-system-user for more information."
+			"See https://nebula.chat/docs/usage#using-the-correct-system-user for more information."
 		);
 	}
 }

@@ -1,8 +1,9 @@
 import constants from "./constants";
 
 import "../css/style.css";
-import {createApp} from "vue";
-import {store, CallableGetters, key} from "./store";
+import {createPinia} from "pinia";
+import {createApp, watch} from "vue";
+import {useMainStore} from "../stores/main";
 import App from "../components/App.vue";
 import storage from "./localStorage";
 import {router} from "./router";
@@ -19,41 +20,44 @@ const faviconNormal = favicon?.getAttribute("href") || "";
 const faviconAlerted = favicon?.dataset.other || "";
 
 export const VueApp = createApp(App);
+const pinia = createPinia();
 
 VueApp.use(router);
-VueApp.use(store, key);
+VueApp.use(pinia);
+
+const store = useMainStore();
 
 VueApp.mount("#app");
 socket.open();
 
-store.watch(
-	(state) => state.sidebarOpen,
+watch(
+	() => store.sidebarOpen,
 	(sidebarOpen) => {
 		if (window.innerWidth > constants.mobileViewportPixels) {
-			storage.set("thelounge.state.sidebar", sidebarOpen.toString());
+			storage.set("nebula.state.sidebar", sidebarOpen.toString());
 			eventbus.emit("resize");
 		}
 	}
 );
 
-store.watch(
-	(state) => state.userlistOpen,
+watch(
+	() => store.userlistOpen,
 	(userlistOpen) => {
-		storage.set("thelounge.state.userlist", userlistOpen.toString());
+		storage.set("nebula.state.userlist", userlistOpen.toString());
 		eventbus.emit("resize");
 	}
 );
 
-store.watch(
-	(_, getters: CallableGetters) => getters.title,
+watch(
+	() => store.title,
 	(title) => {
 		document.title = title;
 	}
 );
 
 // Toggles the favicon to red when there are unread notifications
-store.watch(
-	(_, getters: CallableGetters) => getters.highlightCount,
+watch(
+	() => store.highlightCount,
 	(highlightCount) => {
 		favicon?.setAttribute("href", highlightCount > 0 ? faviconAlerted : faviconNormal);
 
@@ -73,9 +77,9 @@ store.watch(
 
 VueApp.config.errorHandler = function (e) {
 	if (e instanceof Error) {
-		store.commit("currentUserVisibleError", `Vue error: ${e.message}`);
+		store.setCurrentUserVisibleError(`Vue error: ${e.message}`);
 	} else {
-		store.commit("currentUserVisibleError", `Vue error: ${String(e)}`);
+		store.setCurrentUserVisibleError(`Vue error: ${String(e)}`);
 	}
 
 	// eslint-disable-next-line no-console

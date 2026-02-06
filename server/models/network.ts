@@ -1,17 +1,17 @@
 import _ from "lodash";
-import { v4 as uuidv4 } from "uuid";
-import IrcFramework, { Client as IRCClient } from "irc-framework";
-import Chan, { ChanConfig, Channel } from "./chan";
+import {v4 as uuidv4} from "uuid";
+import IrcFramework, {Client as IRCClient} from "irc-framework";
+import Chan, {ChanConfig, Channel} from "./chan";
 import Msg from "./msg";
 import Prefix from "./prefix";
-import Helper, { Hostmask } from "../helper";
-import Config, { WebIRC } from "../config";
+import Helper, {Hostmask} from "../helper";
+import Config, {WebIRC} from "../config";
 import STSPolicies from "../plugins/sts";
-import ClientCertificate, { ClientCertificateType } from "../plugins/clientCertificate";
+import ClientCertificate, {ClientCertificateType} from "../plugins/clientCertificate";
 import Client from "../client";
-import { MessageType } from "../../shared/types/msg";
-import { ChanType } from "../../shared/types/chan";
-import { SharedNetwork } from "../../shared/types/network";
+import {MessageType} from "../../shared/types/msg";
+import {ChanType} from "../../shared/types/chan";
+import {SharedNetwork} from "../../shared/types/network";
 
 type NetworkIrcOptions = {
 	host: string;
@@ -32,11 +32,11 @@ type NetworkIrcOptions = {
 	};
 	sasl_mechanism?: string;
 	account?:
-	| {
-		account: string;
-		password: string;
-	}
-	| Record<string, never>;
+		| {
+				account: string;
+				password: string;
+		  }
+		| Record<string, never>;
 };
 
 type NetworkStatus = {
@@ -50,7 +50,7 @@ export type IgnoreListItem = Hostmask & {
 
 type IgnoreList = IgnoreListItem[];
 
-type NonNullableIRCWithOptions = NonNullable<IRCClient & { options: NetworkIrcOptions }>;
+type NonNullableIRCWithOptions = NonNullable<IRCClient & {options: NetworkIrcOptions}>;
 
 // eslint-disable-next-line no-use-before-define
 export type NetworkWithIrcFramework = Network & {
@@ -158,10 +158,10 @@ class Network {
 			serverOptions: {
 				CHANTYPES: ["#", "&"],
 				PREFIX: new Prefix([
-					{ symbol: "!", mode: "Y" },
-					{ symbol: "@", mode: "o" },
-					{ symbol: "%", mode: "h" },
-					{ symbol: "+", mode: "v" },
+					{symbol: "!", mode: "Y"},
+					{symbol: "@", mode: "o"},
+					{symbol: "%", mode: "h"},
+					{symbol: "+", mode: "v"},
 				]),
 				NETWORK: "",
 			},
@@ -172,7 +172,6 @@ class Network {
 			proxyPassword: "",
 			proxyEnabled: false,
 
-			chanCache: [],
 			chanCache: [],
 			ignoreList: [],
 			notifyList: [],
@@ -492,10 +491,10 @@ class Network {
 		this.highlightRegex = new RegExp(
 			// Do not match characters and numbers (unless IRC color)
 			"(?:^|[^a-z0-9]|\x03[0-9]{1,2})" +
-			// Escape nickname, as it may contain regex stuff
-			_.escapeRegExp(nick) +
-			// Do not match characters and numbers
-			"(?:[^a-z0-9]|$)",
+				// Escape nickname, as it may contain regex stuff
+				_.escapeRegExp(nick) +
+				// Do not match characters and numbers
+				"(?:[^a-z0-9]|$)",
 
 			// Case insensitive search
 			"i"

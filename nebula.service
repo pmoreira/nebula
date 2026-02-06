@@ -1,0 +1,16 @@
+[Unit]
+Description=Nebula - Self-hosted Web IRC client
+After=network.target
+
+[Service]
+Type=simple
+User=nebula
+Group=nebula
+WorkingDirectory=/opt/nebula
+ExecStart=/usr/bin/nebula start
+Restart=always
+Environment=NODE_ENV=production
+# Environment=NEBULA_HOME=/var/lib/nebula
+
+[Install]
+WantedBy=multi-user.target

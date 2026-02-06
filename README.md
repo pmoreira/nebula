@@ -1,8 +1,8 @@
 <h1 align="center">
 	<img
 		width="300"
-		alt="The Lounge"
-		src="https://raw.githubusercontent.com/thelounge/thelounge/master/client/img/logo-vertical-transparent-bg.svg?sanitize=true">
+		alt="Nebula"
+		src="client/img/logo-vertical-transparent-bg.svg">
 </h1>
 
 <h3 align="center">
@@ -11,19 +11,11 @@
 
 <p align="center">
 	<strong>
-		<a href="https://thelounge.chat/">Website</a>
+		<a href="https://nebula-chat.github.io/">Website</a>
 		•
-		<a href="https://thelounge.chat/docs">Docs</a>
-		•
-		<a href="https://demo.thelounge.chat/">Demo</a>
-    •
-		<a href="https://github.com/thelounge/thelounge-docker">Docker</a>
+		<a href="https://nebula-chat.github.io/docs">Docs</a>
 	</strong>
 </p>
-<p align="center">
-	<a href="https://demo.thelounge.chat/"><img
-		alt="#thelounge IRC channel on Libera.Chat"
-		src="https://img.shields.io/badge/Libera.Chat-%23thelounge-415364.svg?colorA=ff9e18"></a>
 	<a href="https://yarn.pm/thelounge"><img
 		alt="npm version"
 		src="https://img.shields.io/npm/v/thelounge.svg?colorA=333a41&maxAge=3600"></a>
@@ -44,7 +36,7 @@
 - **Responsive interface.** The client works smoothly on every desktop, smartphone and tablet.
 - **Synchronized experience.** Always resume where you left off no matter what device.
 
-To learn more about configuration, usage and features of The Lounge, take a look at [the website](https://thelounge.chat).
+To learn more about configuration, usage and features of Nebula, take a look at [the website](https://nebula-chat.github.io).
 
 The Lounge is the official and community-managed fork of [Shout](https://github.com/erming/shout), by [Mattias Erming](https://github.com/erming).
 
@@ -60,20 +52,16 @@ Please refer to the [install and upgrade documentation on our website](https://t
 
 ### Running from source
 
-The following commands install and run the development version of The Lounge:
+The following commands install and run Nebula:
 
 ```sh
-git clone https://github.com/thelounge/thelounge.git
-cd thelounge
-yarn install
-NODE_ENV=production yarn build
-yarn start
+git clone https://github.com/<your-username>/nebula.git
+cd nebula
+./setup.sh
+nebula start
 ```
 
-When installed like this, `thelounge` executable is not created. Use `node index <command>` to run commands.
-
-⚠️ While it is the most recent codebase, this is not production-ready! Run at
-your own risk. It is also not recommended to run this as root.
+⚠️ While it is the most recent codebase, ensure you run it as a non-root user.
 
 ## Development setup
 

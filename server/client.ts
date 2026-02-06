@@ -4,6 +4,7 @@ import {v4 as uuidv4} from "uuid";
 import escapeRegExp from "lodash/escapeRegExp";
 import crypto from "crypto";
 import colors from "chalk";
+import {IncomingMessage} from "http";
 
 import log from "./log";
 import Chan, {ChanConfig} from "./models/chan";
@@ -19,8 +20,8 @@ import SqliteMessageStorage from "./plugins/messageStorage/sqlite";
 import TextFileMessageStorage from "./plugins/messageStorage/text";
 import Network, {IgnoreListItem, NetworkConfig, NetworkWithIrcFramework} from "./models/network";
 import ClientManager from "./clientManager";
-import {MessageStorage} from "./plugins/messageStorage/types";
-import {StorageCleaner} from "./storageCleaner";
+import NetworkManager from "./services/NetworkManager";
+import MessageStorageManager from "./services/MessageStorageManager";
 import {SearchQuery, SearchResponse} from "../shared/types/storage";
 import {SharedChan, ChanType} from "../shared/types/chan";
 import {SharedNetwork} from "../shared/types/network";
@@ -96,17 +97,18 @@ class Client {
 	idMsg!: number;
 	idChan!: number;
 	name!: string;
-	networks!: Network[];
+	networkManager: NetworkManager;
+	messageStorageManager: MessageStorageManager;
 	mentions!: SharedMention[];
 	manager!: ClientManager;
-	messageStorage!: MessageStorage[];
 	highlightRegex!: RegExp | null;
 	highlightExceptionRegex!: RegExp | null;
-	messageProvider?: SqliteMessageStorage;
 
 	fileHash!: string;
 
 	constructor(manager: ClientManager, name?: string, config = {} as UserConfig) {
+		this.networkManager = new NetworkManager(this);
+		this.messageStorageManager = new MessageStorageManager(this);
 		this.id = uuidv4();
 		_.merge(this, {
 			awayMessage: "",
@@ -116,13 +118,10 @@ class Client {
 			idChan: 1,
 			idMsg: 1,
 			name: name,
-			networks: [],
 			mentions: [],
 			manager: manager,
-			messageStorage: [],
 			highlightRegex: null,
 			highlightExceptionRegex: null,
-			messageProvider: undefined,
 		});
 
 		const client = this;
@@ -130,29 +129,7 @@ class Client {
 		client.config.log = Boolean(client.config.log);
 		client.config.password = String(client.config.password);
 
-		if (!Config.values.public && client.config.log) {
-			if (Config.values.messageStorage.includes("sqlite")) {
-				client.messageProvider = new SqliteMessageStorage(client.name);
-
-				if (Config.values.storagePolicy.enabled) {
-					log.info(
-						`Activating storage cleaner. Policy: ${Config.values.storagePolicy.deletionPolicy}. MaxAge: ${Config.values.storagePolicy.maxAgeDays} days`
-					);
-					const cleaner = new StorageCleaner(client.messageProvider);
-					cleaner.start();
-				}
-
-				client.messageStorage.push(client.messageProvider);
-			}
-
-			if (Config.values.messageStorage.includes("text")) {
-				client.messageStorage.push(new TextFileMessageStorage(client.name));
-			}
-
-			for (const messageStorage of client.messageStorage) {
-				messageStorage.enable().catch((e) => log.error(e));
-			}
-		}
+		this.messageStorageManager.init();
 
 		if (!_.isPlainObject(client.config.sessions)) {
 			client.config.sessions = {};
@@ -170,8 +147,6 @@ class Client {
 			client.awayMessage = client.config.clientSettings.awayMessage;
 		}
 
-		client.config.clientSettings.searchEnabled = client.messageProvider !== undefined;
-
 		client.compileCustomHighlights();
 
 		_.forOwn(client.config.sessions, (session) => {
@@ -181,6 +156,14 @@ class Client {
 		});
 	}
 
+	get networks(): Network[] {
+		return this.networkManager.networks;
+	}
+
+	set networks(networks: Network[]) {
+		this.networkManager.networks = networks;
+	}
+
 	connect() {
 		const client = this;
 
@@ -188,7 +171,9 @@ class Client {
 			throw new Error(`${client.name} is already connected`);
 		}
 
-		(client.config.networks || []).forEach((network) => client.connectToNetwork(network, true));
+		(client.config.networks || []).forEach((network) =>
+			client.networkManager.connectToNetwork(network, true)
+		);
 
 		// Networks are stored directly in the client object
 		// We don't need to keep it in the config object
@@ -233,157 +218,11 @@ class Client {
 	}
 
 	find(channelId: number) {
-		let network: Network | null = null;
-		let chan: Chan | null | undefined = null;
-
-		for (const n of this.networks) {
-			chan = _.find(n.channels, {id: channelId});
-
-			if (chan) {
-				network = n;
-				break;
-			}
-		}
-
-		if (network && chan) {
-			return {network, chan};
-		}
-
-		return false;
-	}
-
-	networkFromConfig(args: Record<string, any>): Network {
-		const client = this;
-
-		let channels: Chan[] = [];
-
-		if (Array.isArray(args.channels)) {
-			let badChanConf = false;
-
-			args.channels.forEach((chan: ChanConfig) => {
-				const type = ChanType[(chan.type || "channel").toUpperCase()];
-
-				if (!chan.name || !type) {
-					badChanConf = true;
-					return;
-				}
-
-				channels.push(
-					client.createChannel({
-						name: chan.name,
-						key: chan.key || "",
-						type: type,
-						muted: chan.muted,
-					})
-				);
-			});
-
-			if (badChanConf && client.name) {
-				log.warn(
-					"User '" +
-						client.name +
-						"' on network '" +
-						String(args.name) +
-						"' has an invalid channel which has been ignored"
-				);
-			}
-			// `join` is kept for backwards compatibility when updating from versions <2.0
-			// also used by the "connect" window
-		} else if (args.join) {
-			channels = args.join
-				.replace(/,/g, " ")
-				.split(/\s+/g)
-				.map((chan: string) => {
-					if (!chan.match(/^[#&!+]/)) {
-						chan = `#${chan}`;
-					}
-
-					return client.createChannel({
-						name: chan,
-					});
-				});
-		}
-
-		// TODO; better typing for args
-		return new Network({
-			uuid: args.uuid,
-			name: String(
-				args.name || (Config.values.lockNetwork ? Config.values.defaults.name : "") || ""
-			),
-			host: String(args.host || ""),
-			port: parseInt(String(args.port), 10),
-			tls: !!args.tls,
-			userDisconnected: !!args.userDisconnected,
-			rejectUnauthorized: !!args.rejectUnauthorized,
-			password: String(args.password || ""),
-			nick: String(args.nick || ""),
-			username: String(args.username || ""),
-			realname: String(args.realname || ""),
-			leaveMessage: String(args.leaveMessage || ""),
-			sasl: String(args.sasl || ""),
-			saslAccount: String(args.saslAccount || ""),
-			saslPassword: String(args.saslPassword || ""),
-			commands: (args.commands as string[]) || [],
-			channels: channels,
-			ignoreList: args.ignoreList ? (args.ignoreList as IgnoreListItem[]) : [],
-
-			proxyEnabled: !!args.proxyEnabled,
-			proxyHost: String(args.proxyHost || ""),
-			proxyPort: parseInt(args.proxyPort, 10),
-			proxyUsername: String(args.proxyUsername || ""),
-			proxyPassword: String(args.proxyPassword || ""),
-		});
+		return this.networkManager.find(channelId);
 	}
 
 	connectToNetwork(args: Record<string, any>, isStartup = false) {
-		const client = this;
-
-		// Get channel id for lobby before creating other channels for nicer ids
-		const lobbyChannelId = client.idChan++;
-
-		const network = this.networkFromConfig(args);
-
-		// Set network lobby channel id
-		network.getLobby().id = lobbyChannelId;
-
-		client.networks.push(network);
-		client.emit("network", {
-			network: network.getFilteredClone(this.lastActiveChannel, -1),
-		});
-
-		if (!network.validate(client)) {
-			return;
-		}
-
-		(network as NetworkWithIrcFramework).createIrcFramework(client);
-
-		// TODO
-		// eslint-disable-next-line @typescript-eslint/no-misused-promises
-		events.forEach(async (plugin) => {
-			(await import(`./plugins/irc-events/${plugin}`)).default.apply(client, [
-				network.irc,
-				network,
-			]);
-		});
-
-		if (network.userDisconnected) {
-			network.getLobby().pushMessage(
-				client,
-				new Msg({
-					text: "You have manually disconnected from this network before, use the /connect command to connect again.",
-				}),
-				true
-			);
-		} else if (!isStartup) {
-			// irc is created in createIrcFramework
-			// TODO; fix type
-			network.irc!.connect();
-		}
-
-		if (!isStartup) {
-			client.save();
-			network.channels.forEach((channel) => channel.loadMessages(client, network));
-		}
+		this.networkManager.connectToNetwork(args, isStartup);
 	}
 
 	generateToken(callback: (token: string) => void) {
@@ -400,7 +239,7 @@ class Client {
 		return crypto.createHash("sha512").update(token).digest("hex");
 	}
 
-	updateSession(token: string, ip: string, request: any) {
+	updateSession(token: string, ip: string, request: IncomingMessage) {
 		const client = this;
 		const agent = UAParser(request.headers["user-agent"] || "");
 		let friendlyAgent = "";
@@ -444,7 +283,7 @@ class Client {
 		});
 	}
 
-	input(data) {
+	input(data: {target: number; text: string}) {
 		const client = this;
 		data.text.split("\n").forEach((line) => {
 			data.text = line;
@@ -568,7 +407,7 @@ class Client {
 		);
 	}
 
-	more(data) {
+	more(data: {target: number; lastId: number; condensed: boolean}) {
 		const client = this;
 		const target = client.find(data.target);
 
@@ -623,7 +462,7 @@ class Client {
 		};
 	}
 
-	clearHistory(data) {
+	clearHistory(data: {target: number}) {
 		const client = this;
 		const target = client.find(data.target);
 
@@ -644,20 +483,11 @@ class Client {
 			return;
 		}
 
-		for (const messageStorage of this.messageStorage) {
-			messageStorage.deleteChannel(target.network, target.chan).catch((e) => log.error(e));
-		}
+		this.messageStorageManager.deleteChannel(target.network, target.chan);
 	}
 
 	async search(query: SearchQuery): Promise<SearchResponse> {
-		if (!this.messageProvider?.isEnabled) {
-			return {
-				...query,
-				results: [],
-			};
-		}
-
-		return this.messageProvider.search(query);
+		return this.messageStorageManager.search(query);
 	}
 
 	open(socketId: string, target: number) {
@@ -695,38 +525,11 @@ class Client {
 	}
 
 	sortChannels(netid: SharedNetwork["uuid"], order: SharedChan["id"][]) {
-		const network = _.find(this.networks, {uuid: netid});
-
-		if (!network) {
-			return;
-		}
-
-		network.channels.sort((a, b) => {
-			// Always sort lobby to the top regardless of what the client has sent
-			// Because there's a lot of code that presumes channels[0] is the lobby
-			if (a.type === ChanType.LOBBY) {
-				return -1;
-			} else if (b.type === ChanType.LOBBY) {
-				return 1;
-			}
-
-			return order.indexOf(a.id) - order.indexOf(b.id);
-		});
-		this.save();
-		// Sync order to connected clients
-		this.emit("sync_sort:channels", {
-			network: network.uuid,
-			order: network.channels.map((obj) => obj.id),
-		});
+		this.networkManager.sortChannels(netid, order);
 	}
 
 	sortNetworks(order: SharedNetwork["uuid"][]) {
-		this.networks.sort((a, b) => order.indexOf(a.uuid) - order.indexOf(b.uuid));
-		this.save();
-		// Sync order to connected clients
-		this.emit("sync_sort:networks", {
-			order: this.networks.map((obj) => obj.uuid),
-		});
+		this.networkManager.sortNetworks(order);
 	}
 
 	names(data: {target: number}) {
@@ -772,14 +575,11 @@ class Client {
 			}
 		}
 
-		this.networks.forEach((network) => {
-			network.quit();
-			network.destroy();
-		});
+		this.networkManager.quit();
 
-		for (const messageStorage of this.messageStorage) {
-			messageStorage.close().catch((e) => log.error(e));
-		}
+		this.networkManager.quit();
+
+		this.messageStorageManager.close();
 	}
 
 	clientAttach(socketId: string, token: string) {
@@ -816,7 +616,11 @@ class Client {
 	}
 
 	// TODO: type session to this.attachedClients
-	registerPushSubscription(session: any, subscription: PushSubscriptionJSON, noSave = false) {
+	registerPushSubscription(
+		session: UserConfig["sessions"][string],
+		subscription: PushSubscriptionJSON,
+		noSave = false
+	) {
 		if (
 			!_.isPlainObject(subscription) ||
 			typeof subscription.endpoint !== "string" ||

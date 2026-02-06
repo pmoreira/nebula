@@ -14,6 +14,7 @@ export enum SpecialChanType {
 	INVITELIST = "list_invites",
 	CHANNELLIST = "list_channels",
 	IGNORELIST = "list_ignored",
+	NOTIFYLIST = "list_notified",
 }
 
 export enum ChanState {

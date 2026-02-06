@@ -32,81 +32,75 @@
 	</div>
 </template>
 
-<script lang="ts">
+<script setup lang="ts">
+import {computed, PropType} from "vue";
 import eventbus from "../js/eventbus";
 import isChannelCollapsed from "../js/helpers/isChannelCollapsed";
 import {ClientNetwork, ClientChan} from "../js/types";
-import {computed, defineComponent, PropType} from "vue";
-import {useStore} from "../js/store";
+import {useMainStore} from "../stores/main";
 import {switchToChannel} from "../js/router";
 
-export default defineComponent({
-	name: "ChannelWrapper",
-	props: {
-		network: {
-			type: Object as PropType<ClientNetwork>,
-			required: true,
-		},
-		channel: {
-			type: Object as PropType<ClientChan>,
-			required: true,
-		},
-		active: Boolean,
-		isFiltering: Boolean,
+const props = defineProps({
+	network: {
+		type: Object as PropType<ClientNetwork>,
+		required: true,
 	},
-	setup(props) {
-		const store = useStore();
-		const activeChannel = computed(() => store.state.activeChannel);
-		const isChannelVisible = computed(
-			() => props.isFiltering || !isChannelCollapsed(props.network, props.channel)
-		);
-
-		const getAriaLabel = () => {
-			const extra: string[] = [];
-			const type = props.channel.type;
-
-			if (props.channel.unread > 0) {
-				if (props.channel.unread > 1) {
-					extra.push(`${props.channel.unread} unread messages`);
-				} else {
-					extra.push(`${props.channel.unread} unread message`);
-				}
-			}
-
-			if (props.channel.highlight > 0) {
-				if (props.channel.highlight > 1) {
-					extra.push(`${props.channel.highlight} mentions`);
-				} else {
-					extra.push(`${props.channel.highlight} mention`);
-				}
-			}
-
-			return `${type}: ${props.channel.name} ${extra.length ? `(${extra.join(", ")})` : ""}`;
-		};
-
-		const click = () => {
-			if (props.isFiltering) {
-				return;
-			}
-
-			switchToChannel(props.channel);
-		};
-
-		const openContextMenu = (event: MouseEvent) => {
-			eventbus.emit("contextmenu:channel", {
-				event: event,
-				channel: props.channel,
-				network: props.network,
-			});
-		};
-
-		return {
-			activeChannel,
-			isChannelVisible,
-			getAriaLabel,
-			click,
-			openContextMenu,
-		};
+	channel: {
+		type: Object as PropType<ClientChan>,
+		required: true,
 	},
+	active: Boolean,
+	isFiltering: Boolean,
 });
+
+const store = useMainStore();
+const activeChannel = computed(() => store.activeChannel);
+const isChannelVisible = computed(
+	() => props.isFiltering || !isChannelCollapsed(props.network, props.channel)
+);
+
+const getAriaLabel = () => {
+	const extra: string[] = [];
+	const type = props.channel.type;
+
+	if (props.channel.unread > 0) {
+		if (props.channel.unread > 1) {
+			extra.push(`${props.channel.unread} unread messages`);
+		} else {
+			extra.push(`${props.channel.unread} unread message`);
+		}
+	}
+
+	if (props.channel.highlight > 0) {
+		if (props.channel.highlight > 1) {
+			extra.push(`${props.channel.highlight} mentions`);
+		} else {
+			extra.push(`${props.channel.highlight} mention`);
+		}
+	}
+
+	return `${type}: ${props.channel.name} ${extra.length ? `(${extra.join(", ")})` : ""}`;
+};
+
+const click = () => {
+	if (props.isFiltering) {
+		return;
+	}
+
+	switchToChannel(props.channel);
+};
+
+const openContextMenu = (event: MouseEvent) => {
+	eventbus.emit("contextmenu:channel", {
+		event: event,
+		channel: props.channel,
+		network: props.network,
+	});
+};
+</script>
+
+<script lang="ts">
+export default {
+	name: "ChannelWrapper",
+};
 </script>

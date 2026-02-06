@@ -7,9 +7,9 @@ import storage from "../plugins/storage";
 import Client from "../client";
 import Network from "./network";
 import Prefix from "./prefix";
-import { MessageType, SharedMsg } from "../../shared/types/msg";
-import { ChanType, SpecialChanType, ChanState } from "../../shared/types/chan";
-import { SharedNetworkChan } from "../../shared/types/network";
+import {MessageType, SharedMsg} from "../../shared/types/msg";
+import {ChanType, SpecialChanType, ChanState} from "../../shared/types/chan";
+import {SharedNetworkChan} from "../../shared/types/network";
 
 export type ChanConfig = {
 	name: string;
@@ -65,7 +65,7 @@ class Chan {
 		msg.id = client.idMsg++;
 
 		// If this channel is open in any of the clients, do not increase unread counter
-		const isOpen = _.find(client.attachedClients, { openChannel: chanId }) !== undefined;
+		const isOpen = _.find(client.attachedClients, {openChannel: chanId}) !== undefined;
 
 		if (msg.self) {
 			// reset counters/markers when receiving self-/echo-message
@@ -86,7 +86,7 @@ class Chan {
 			}
 		}
 
-		client.emit("msg", { chan: chanId, msg, unread: this.unread, highlight: this.highlight });
+		client.emit("msg", {chan: chanId, msg, unread: this.unread, highlight: this.highlight});
 
 		// Never store messages in public mode as the session
 		// is completely destroyed when the page gets closed
@@ -164,7 +164,7 @@ class Chan {
 	}
 
 	getUser(nick: string) {
-		return this.findUser(nick) || new User({ nick }, new Prefix([]));
+		return this.findUser(nick) || new User({nick}, new Prefix([]));
 	}
 
 	setUser(user: User) {
@@ -236,7 +236,7 @@ class Chan {
 		this.messages.push(msg);
 
 		// Are there any logs enabled
-		if (client.messageStorage.length === 0) {
+		if (client.messageStorageManager.messageStorage.length === 0) {
 			return;
 		}
 
@@ -260,7 +260,7 @@ class Chan {
 			return;
 		}
 
-		for (const messageStorage of client.messageStorage) {
+		for (const messageStorage of client.messageStorageManager.messageStorage) {
 			messageStorage.index(target.network, targetChannel, msg).catch((e) => log.error(e));
 		}
 	}
@@ -278,7 +278,7 @@ class Chan {
 			return;
 		}
 
-		if (!client.messageProvider) {
+		if (!client.messageStorageManager.messageProvider) {
 			if (network.irc.network.cap.isEnabled("znc.in/playback")) {
 				// if we do have a message provider we might be able to only fetch partial history,
 				// so delay the cap in this case.
@@ -288,7 +288,7 @@ class Chan {
 			return;
 		}
 
-		client.messageProvider
+		client.messageStorageManager.messageProvider
 			.getMessages(network, this, () => client.idMsg++)
 			.then((messages) => {
 				if (messages.length === 0) {
@@ -344,4 +344,4 @@ function requestZncPlayback(channel: Chan, network: Network, from: number) {
 export default Chan;
 
 export type Channel = Chan;
-export { ChanType, SpecialChanType, ChanState };
+export {ChanType, SpecialChanType, ChanState};

@@ -5,7 +5,7 @@ import ForkTsCheckerWebpackPlugin from "fork-ts-checker-webpack-plugin";
 import MiniCssExtractPlugin from "mini-css-extract-plugin";
 import {VueLoaderPlugin} from "vue-loader";
 import babelConfig from "./babel.config.cjs";
-import Helper from "./server/helper";
+// import Helper from "./server/helper";
 
 const tsCheckerPlugin = new ForkTsCheckerWebpackPlugin({
 	typescript: {
@@ -147,10 +147,7 @@ const config: webpack.Configuration = {
 					transform(content) {
 						return content
 							.toString()
-							.replace(
-								"__HASH__",
-								isProduction ? Helper.getVersionCacheBust() : "dev"
-							);
+							.replace("__HASH__", isProduction ? "prod-cache-bust" : "dev");
 					},
 				},
 				{

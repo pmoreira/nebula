@@ -12,14 +12,14 @@ const pkg = require("./package.json");
 if (!require("semver").satisfies(process.version, pkg.engines.node)) {
 	/* eslint-disable no-console */
 	console.error(
-		"The Lounge requires Node.js " +
+		"Nebula requires Node.js " +
 			pkg.engines.node +
 			" (current version: " +
 			process.version +
 			")"
 	);
-	console.error("Please upgrade Node.js in order to use The Lounge");
-	console.error("See https://thelounge.chat/docs/install-and-upgrade");
+	console.error("Please upgrade Node.js in order to use Nebula");
+	console.error("See https://nebula.chat/docs/install-and-upgrade");
 	console.error();
 
 	process.exit(1);
@@ -31,7 +31,7 @@ if (fs.existsSync("./dist/server/index.js")) {
 	require("./dist/server/index.js");
 } else {
 	console.error(
-		"Files in ./dist/server/ not found. Please run `yarn build` before trying to run `node index.js`."
+		"Files in ./dist/server/ not found. Please run `npm run build` before trying to run `node index.js`."
 	);
 
 	process.exit(1);

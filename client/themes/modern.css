@@ -1,0 +1,63 @@
+:root {
+	--body-bg-color: #0f172a; /* Slate 900 */
+	--window-bg-color: #1e293b; /* Slate 800 */
+	--body-color: #f1f5f9; /* Slate 100 */
+	--body-color-muted: #94a3b8; /* Slate 400 */
+	--button-color: #3b82f6; /* Blue 500 */
+	--link-color: #60a5fa; /* Blue 400 */
+	--highlight-bg-color: #334155; /* Slate 700 */
+	--highlight-border-color: #64748b; /* Slate 500 */
+	--unread-marker-color: #ef4444; /* Red 500 */
+	--date-marker-color: #10b981; /* Emerald 500 */
+    --overlay-bg-color: rgba(15, 23, 42, 0.7);
+}
+
+.window {
+    border-radius: 12px;
+    box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+#sidebar {
+    background-color: #020617; /* Slate 950 */
+    border-right: 1px solid #1e293b;
+}
+
+#footer {
+    background-color: #0f172a;
+    border-top: 1px solid #1e293b;
+}
+
+.channel-list-item:hover,
+#footer button:hover {
+	background-color: #1e293b;
+}
+
+#footer button.active,
+.channel-list-item.active {
+	background-color: #334155;
+}
+
+/* Smooth transitions */
+.channel-list-item, button, a {
+    transition: all 0.2s ease-in-out;
+}
+
+/* Modern scrollbars */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #334155;
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #475569;
+}

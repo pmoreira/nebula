@@ -133,6 +133,7 @@ import ListBans from "./Special/ListBans.vue";
 import ListInvites from "./Special/ListInvites.vue";
 import ListChannels from "./Special/ListChannels.vue";
 import ListIgnored from "./Special/ListIgnored.vue";
+import ListNotified from "./Special/ListNotified.vue";
 import {defineComponent, PropType, ref, computed, watch, nextTick, onMounted, Component} from "vue";
 import type {ClientNetwork, ClientChan} from "../js/types";
 import {useStore} from "../js/store";
@@ -170,6 +171,8 @@ export default defineComponent({
 					return ListChannels as Component;
 				case SpecialChanType.IGNORELIST:
 					return ListIgnored as Component;
+				case SpecialChanType.NOTIFYLIST:
+					return ListNotified as Component;
 			}
 
 			return undefined;

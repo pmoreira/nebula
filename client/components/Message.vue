@@ -97,8 +97,9 @@
 	</div>
 </template>
 
-<script lang="ts">
-import {computed, defineComponent, PropType} from "vue";
+<script setup lang="ts">
+import {computed} from "vue";
+import type {PropType} from "vue";
 import dayjs from "dayjs";
 
 import constants from "../js/constants";
@@ -109,65 +110,59 @@ import ParsedMessage from "./ParsedMessage.vue";
 import MessageTypes from "./MessageTypes";
 
 import type {ClientChan, ClientMessage, ClientNetwork} from "../js/types";
-import {useStore} from "../js/store";
+import {useSettingsStore} from "../stores/settings";
 
 MessageTypes.ParsedMessage = ParsedMessage;
 MessageTypes.LinkPreview = LinkPreview;
 MessageTypes.Username = Username;
 
-export default defineComponent({
-	name: "Message",
-	components: MessageTypes,
-	props: {
-		message: {type: Object as PropType<ClientMessage>, required: true},
-		channel: {type: Object as PropType<ClientChan>, required: false},
-		network: {type: Object as PropType<ClientNetwork>, required: true},
-		keepScrollPosition: Function as PropType<() => void>,
-		isPreviousSource: Boolean,
-		focused: Boolean,
-	},
-	setup(props) {
-		const store = useStore();
-
-		const timeFormat = computed(() => {
-			let format: keyof typeof constants.timeFormats;
-
-			if (store.state.settings.use12hClock) {
-				format = store.state.settings.showSeconds ? "msg12hWithSeconds" : "msg12h";
-			} else {
-				format = store.state.settings.showSeconds ? "msgWithSeconds" : "msgDefault";
-			}
-
-			return constants.timeFormats[format];
-		});
-
-		const messageTime = computed(() => {
-			return dayjs(props.message.time).format(timeFormat.value);
-		});
-
-		const messageTimeLocale = computed(() => {
-			return localetime(props.message.time);
-		});
-
-		const messageComponent = computed(() => {
-			return "message-" + (props.message.type || "invalid"); // TODO: force existence of type in sharedmsg
-		});
-
-		const isAction = () => {
-			if (!props.message.type) {
-				return false;
-			}
-
-			return typeof MessageTypes["message-" + props.message.type] !== "undefined";
-		};
-
-		return {
-			timeFormat,
-			messageTime,
-			messageTimeLocale,
-			messageComponent,
-			isAction,
-		};
-	},
+const props = defineProps({
+	message: {type: Object as PropType<ClientMessage>, required: true},
+	channel: {type: Object as PropType<ClientChan>, required: false},
+	network: {type: Object as PropType<ClientNetwork>, required: true},
+	keepScrollPosition: {type: Function as PropType<() => void>, required: false},
+	isPreviousSource: Boolean,
+	focused: Boolean,
 });
+
+const settingsStore = useSettingsStore();
+
+const timeFormat = computed(() => {
+	let format: keyof typeof constants.timeFormats;
+
+	if (settingsStore.use12hClock) {
+		format = settingsStore.showSeconds ? "msg12hWithSeconds" : "msg12h";
+	} else {
+		format = settingsStore.showSeconds ? "msgWithSeconds" : "msgDefault";
+	}
+
+	return constants.timeFormats[format];
+});
+
+const messageTime = computed(() => {
+	return dayjs(props.message.time).format(timeFormat.value);
+});
+
+const messageTimeLocale = computed(() => {
+	return localetime(props.message.time);
+});
+
+const messageComponent = computed(() => {
+	const componentName = "message-" + (props.message.type || "invalid");
+	return MessageTypes[componentName] || null;
+});
+
+const isAction = () => {
+	if (!props.message.type) {
+		return false;
+	}
+
+	return typeof MessageTypes["message-" + props.message.type] !== "undefined";
+};
+</script>
+
+<script lang="ts">
+export default {
+	name: "Message",
+};
 </script>
