@@ -16,7 +16,7 @@ fi
 # Install dependencies if not already done
 if [ ! -d "node_modules" ]; then
     echo "Installing dependencies..."
-    npm install
+    npm install --legacy-peer-deps
 fi
 
 # Build the project
