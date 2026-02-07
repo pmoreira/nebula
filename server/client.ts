@@ -129,8 +129,6 @@ class Client {
 		client.config.log = Boolean(client.config.log);
 		client.config.password = String(client.config.password);
 
-		this.messageStorageManager.init();
-
 		if (!_.isPlainObject(client.config.sessions)) {
 			client.config.sessions = {};
 		}
@@ -138,6 +136,8 @@ class Client {
 		if (!_.isPlainObject(client.config.clientSettings)) {
 			client.config.clientSettings = {};
 		}
+
+		this.messageStorageManager.init();
 
 		if (!_.isPlainObject(client.config.browser)) {
 			client.config.browser = {};
