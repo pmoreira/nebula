@@ -8,7 +8,7 @@
 				class="btn"
 				@click.prevent="nativeInstallPrompt"
 			>
-				Add The Lounge to Home screen
+				Add Nebula to Home screen
 			</button>
 			<button
 				v-if="canRegisterProtocol"
@@ -16,15 +16,15 @@
 				class="btn"
 				@click.prevent="registerProtocol"
 			>
-				Open irc:// URLs with The Lounge
+				Open irc:// URLs with Nebula
 			</button>
 		</div>
-		<div v-if="store.state.serverConfiguration?.fileUpload">
+		<div v-if="store.serverConfiguration?.fileUpload">
 			<h2>File uploads</h2>
 			<div>
 				<label class="opt">
 					<input
-						:checked="store.state.settings.uploadCanvas"
+						:checked="settingsStore.uploadCanvas"
 						type="checkbox"
 						name="uploadCanvas"
 					/>
@@ -39,18 +39,14 @@
 				</label>
 			</div>
 		</div>
-		<div v-if="!store.state.serverConfiguration?.public">
+		<div v-if="!store.serverConfiguration?.public">
 			<h2>Settings synchronisation</h2>
 			<label class="opt">
-				<input
-					:checked="store.state.settings.syncSettings"
-					type="checkbox"
-					name="syncSettings"
-				/>
+				<input :checked="settingsStore.syncSettings" type="checkbox" name="syncSettings" />
 				Synchronize settings with other clients
 			</label>
-			<template v-if="!store.state.settings.syncSettings">
-				<div v-if="store.state.serverHasSettings" class="settings-sync-panel">
+			<template v-if="!settingsStore.syncSettings">
+				<div v-if="store.serverHasSettings" class="settings-sync-panel">
 					<p>
 						<strong>Warning:</strong> Checking this box will override the settings of
 						this client with those stored on the server.
@@ -71,18 +67,18 @@
 				</div>
 			</template>
 		</div>
-		<div v-if="!store.state.serverConfiguration?.public">
+		<div v-if="!store.serverConfiguration?.public">
 			<h2>Automatic away message</h2>
 
 			<label class="opt">
 				<label for="awayMessage" class="sr-only">Automatic away message</label>
 				<input
 					id="awayMessage"
-					:value="store.state.settings.awayMessage"
+					:value="settingsStore.awayMessage"
 					type="text"
 					name="awayMessage"
 					class="input"
-					placeholder="Away message if The Lounge is not open"
+					placeholder="Away message if Nebula is not open"
 				/>
 			</label>
 		</div>
@@ -93,7 +89,8 @@
 
 <script lang="ts">
 import {computed, defineComponent, onMounted, ref} from "vue";
-import {useStore} from "../../js/store";
+import {useMainStore} from "../../stores/main";
+import {useSettingsStore} from "../../stores/settings";
 import {BeforeInstallPromptEvent} from "../../js/types";
 
 let installPromptEvent: BeforeInstallPromptEvent | null = null;
@@ -106,7 +103,8 @@ window.addEventListener("beforeinstallprompt", (e) => {
 export default defineComponent({
 	name: "GeneralSettings",
 	setup() {
-		const store = useStore();
+		const store = useMainStore();
+		const settingsStore = useSettingsStore();
 		const canRegisterProtocol = ref(false);
 
 		const hasInstallPromptEvent = computed(() => {
@@ -119,7 +117,7 @@ export default defineComponent({
 			// and the network configuration is not locked
 			canRegisterProtocol.value =
 				!!window.navigator.registerProtocolHandler &&
-				!store.state.serverConfiguration?.lockNetwork;
+				!store.serverConfiguration?.lockNetwork;
 		});
 
 		const nativeInstallPrompt = () => {
@@ -136,34 +134,23 @@ export default defineComponent({
 		};
 
 		const onForceSyncClick = () => {
-			store.dispatch("settings/syncAll", true).catch((e) => {
-				// eslint-disable-next-line no-console
-				console.error(e);
-			});
+			settingsStore.syncAll(true);
 
-			store
-				.dispatch("settings/update", {
-					name: "syncSettings",
-					value: true,
-					sync: true,
-				})
-				.catch((e) => {
-					// eslint-disable-next-line no-console
-					console.error(e);
-				});
+			settingsStore.update("syncSettings", true, true);
 		};
 
 		const registerProtocol = () => {
 			const uri = document.location.origin + document.location.pathname + "?uri=%s";
 			// @ts-expect-error
 			// the third argument is deprecated but recommended for compatibility: https://developer.mozilla.org/en-US/docs/Web/API/Navigator/registerProtocolHandler
-			window.navigator.registerProtocolHandler("irc", uri, "The Lounge");
+			window.navigator.registerProtocolHandler("irc", uri, "Nebula");
 			// @ts-expect-error
-			window.navigator.registerProtocolHandler("ircs", uri, "The Lounge");
+			window.navigator.registerProtocolHandler("ircs", uri, "Nebula");
 		};
 
 		return {
 			store,
+			settingsStore,
 			canRegisterProtocol,
 			hasInstallPromptEvent,
 			nativeInstallPrompt,

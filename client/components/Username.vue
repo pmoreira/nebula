@@ -1,6 +1,6 @@
 <template>
 	<span
-		:class="['user', {[nickColor]: store.state.settings.coloredNicks}, {active: active}]"
+		:class="['user', {[nickColor]: settingsStore.coloredNicks}, {active: active}]"
 		:data-name="user.nick"
 		role="button"
 		v-on="onHover ? {mouseenter: hover} : {}"
@@ -16,7 +16,7 @@ import {UserInMessage} from "../../shared/types/msg";
 import eventbus from "../js/eventbus";
 import colorClass from "../js/helpers/colorClass";
 import type {ClientChan, ClientNetwork} from "../js/types";
-import {useStore} from "../js/store";
+import {useSettingsStore} from "../stores/settings";
 
 type UsernameUser = Partial<UserInMessage> & {
 	mode?: string;
@@ -70,14 +70,14 @@ export default defineComponent({
 			});
 		};
 
-		const store = useStore();
+		const settingsStore = useSettingsStore();
 
 		return {
 			mode,
 			nickColor,
 			hover,
 			openContextMenu,
-			store,
+			settingsStore,
 		};
 	},
 });

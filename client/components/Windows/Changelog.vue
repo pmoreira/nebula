@@ -6,27 +6,23 @@
 		<div class="container">
 			<router-link id="back-to-help" to="/help">« Help</router-link>
 
-			<template
-				v-if="store.state.versionData?.current && store.state.versionData?.current.version"
-			>
-				<h1 class="title">
-					Release notes for {{ store.state.versionData.current.version }}
-				</h1>
+			<template v-if="store.versionData?.current && store.versionData?.current.version">
+				<h1 class="title">Release notes for {{ store.versionData.current.version }}</h1>
 
-				<template v-if="store.state.versionData.current.changelog">
+				<template v-if="store.versionData.current.changelog">
 					<h3>Introduction</h3>
 					<div
 						ref="changelog"
 						class="changelog-text"
-						v-html="store.state.versionData.current.changelog"
+						v-html="store.versionData.current.changelog"
 					></div>
 				</template>
 				<template v-else>
 					<p>Unable to retrieve changelog for current release from GitHub.</p>
 					<p>
 						<a
-							v-if="store.state.serverConfiguration?.version"
-							:href="`https://github.com/thelounge/thelounge/releases/tag/v${store.state.serverConfiguration?.version}`"
+							v-if="store.serverConfiguration?.version"
+							:href="`https://github.com/thelounge/thelounge/releases/tag/v${store.serverConfiguration?.version}`"
 							target="_blank"
 							rel="noopener"
 							>View release notes for this version on GitHub</a
@@ -42,8 +38,8 @@
 <script lang="ts">
 import {defineComponent, onMounted, onUpdated, ref} from "vue";
 import socket from "../../js/socket";
-import {useStore} from "../../js/store";
 import SidebarToggle from "../SidebarToggle.vue";
+import {useMainStore} from "../../stores/main";
 
 export default defineComponent({
 	name: "Changelog",
@@ -51,20 +47,24 @@ export default defineComponent({
 		SidebarToggle,
 	},
 	setup() {
-		const store = useStore();
+		const store = useMainStore();
 		const changelog = ref<HTMLDivElement | null>(null);
 
 		const patchChangelog = () => {
+			if (!store.versionData) {
+				return;
+			}
+
 			if (!changelog.value) {
 				return;
 			}
 
-			const links = changelog.value.querySelectorAll("a");
+			const links = changelog.value.querySelectorAll(".changelog-entry a");
 
 			links.forEach((link) => {
 				// Make sure all links will open a new tab instead of exiting the application
 				link.setAttribute("target", "_blank");
-				link.setAttribute("rel", "noopener");
+				link.setAttribute("rel", "noopener noreferrer");
 
 				if (link.querySelector("img")) {
 					// Add required metadata to image links, to support built-in image viewer
@@ -74,7 +74,7 @@ export default defineComponent({
 		};
 
 		onMounted(() => {
-			if (!store.state.versionData) {
+			if (!store.versionData) {
 				socket.emit("changelog");
 			}
 

@@ -6,7 +6,7 @@
 import {defineComponent, ref} from "vue";
 
 import socket from "../../js/socket";
-import {useStore} from "../../js/store";
+import {useMainStore} from "../../stores/main";
 import NetworkForm, {NetworkFormDefaults} from "../NetworkForm.vue";
 
 export default defineComponent({
@@ -18,7 +18,7 @@ export default defineComponent({
 		queryParams: Object,
 	},
 	setup(props) {
-		const store = useStore();
+		const store = useMainStore();
 
 		const disabled = ref(false);
 
@@ -48,17 +48,14 @@ export default defineComponent({
 				}
 
 				if (
-					!Object.prototype.hasOwnProperty.call(
-						store.state.serverConfiguration?.defaults,
-						key
-					)
+					!Object.prototype.hasOwnProperty.call(store.serverConfiguration?.defaults, key)
 				) {
 					continue;
 				}
 
 				// When the network is locked, URL overrides should not affect disabled fields
 				if (
-					store.state.serverConfiguration?.lockNetwork &&
+					store.serverConfiguration?.lockNetwork &&
 					["name", "host", "port", "tls", "rejectUnauthorized"].includes(key)
 				) {
 					continue;
@@ -78,7 +75,7 @@ export default defineComponent({
 				}
 
 				// Override server provided defaults with parameters passed in the URL if they match the data type
-				switch (typeof store.state.serverConfiguration?.defaults[key]) {
+				switch (typeof store.serverConfiguration?.defaults[key]) {
 					case "boolean":
 						if (value === "0" || value === "false") {
 							parsedParams[key] = false;
@@ -102,7 +99,7 @@ export default defineComponent({
 		const defaults = ref<Partial<NetworkFormDefaults>>(
 			Object.assign(
 				{},
-				store.state.serverConfiguration?.defaults,
+				store.serverConfiguration?.defaults,
 				parseOverrideParams(props.queryParams)
 			)
 		);

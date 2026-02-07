@@ -3,9 +3,9 @@
 		<div
 			id="chat"
 			:class="{
-				'hide-motd': !store.state.settings.motd,
-				'time-seconds': store.state.settings.showSeconds,
-				'time-12h': store.state.settings.use12hClock,
+				'hide-motd': !settingsStore.motd,
+				'time-seconds': settingsStore.showSeconds,
+				'time-12h': settingsStore.use12hClock,
 				'colored-nicks': true, // TODO temporarily fixes themes, to be removed in next major version
 			}"
 		>
@@ -47,7 +47,7 @@
 					/></span>
 					<MessageSearchForm
 						v-if="
-							store.state.settings.searchEnabled &&
+							settingsStore.searchEnabled &&
 							['channel', 'query'].includes(channel.type)
 						"
 						:network="network"
@@ -71,7 +71,7 @@
 						<button
 							class="rt"
 							aria-label="Toggle user list"
-							@click="store.commit('toggleUserlist')"
+							@click="store.toggleUserlist()"
 						/>
 					</span>
 				</div>
@@ -110,11 +110,11 @@
 			</div>
 		</div>
 		<div
-			v-if="store.state.currentUserVisibleError"
+			v-if="store.currentUserVisibleError"
 			id="user-visible-error"
 			@click="hideUserVisibleError"
 		>
-			{{ store.state.currentUserVisibleError }}
+			{{ store.currentUserVisibleError }}
 		</div>
 		<ChatInput :network="network" :channel="channel" />
 	</div>
@@ -136,7 +136,8 @@ import ListIgnored from "./Special/ListIgnored.vue";
 import ListNotified from "./Special/ListNotified.vue";
 import {defineComponent, PropType, ref, computed, watch, nextTick, onMounted, Component} from "vue";
 import type {ClientNetwork, ClientChan} from "../js/types";
-import {useStore} from "../js/store";
+import {useMainStore} from "../stores/main";
+import {useSettingsStore} from "../stores/settings";
 import {SpecialChanType, ChanType} from "../../shared/types/chan";
 
 export default defineComponent({
@@ -156,7 +157,13 @@ export default defineComponent({
 	},
 	emits: ["channel-changed"],
 	setup(props, {emit}) {
-		const store = useStore();
+		const store = useMainStore();
+		const settingsStore = useSettingsStore();
+
+		const isConnected = computed(() => store.isConnected);
+		const currentUserVisibleError = computed(() => store.currentUserVisibleError);
+		const serverConfiguration = computed(() => store.serverConfiguration);
+		const settings = computed(() => settingsStore);
 
 		const messageList = ref<typeof MessageList>();
 		const topicInput = ref<HTMLInputElement | null>(null);
@@ -194,7 +201,7 @@ export default defineComponent({
 		};
 
 		const hideUserVisibleError = () => {
-			store.commit("currentUserVisibleError", null);
+			store.setCurrentUserVisibleError(null);
 		};
 
 		const editTopic = () => {
@@ -263,6 +270,7 @@ export default defineComponent({
 
 		return {
 			store,
+			settingsStore,
 			messageList,
 			topicInput,
 			specialComponent,

@@ -3,8 +3,8 @@
 		<div
 			id="chat"
 			:class="{
-				'time-seconds': store.state.settings.showSeconds,
-				'time-12h': store.state.settings.use12hClock,
+				'time-seconds': settingsStore.showSeconds,
+				'time-12h': settingsStore.use12hClock,
 			}"
 		>
 			<div
@@ -32,20 +32,17 @@
 						<div v-show="moreResultsAvailable" class="show-more">
 							<button
 								ref="loadMoreButton"
-								:disabled="
-									!!store.state.messageSearchPendingQuery ||
-									!store.state.isConnected
-								"
+								:disabled="!!store.messageSearchPendingQuery || !store.isConnected"
 								class="btn"
 								@click="onShowMoreClick"
 							>
-								<span v-if="store.state.messageSearchPendingQuery">Loading…</span>
+								<span v-if="store.messageSearchPendingQuery">Loading…</span>
 								<span v-else>Show older messages</span>
 							</button>
 						</div>
 
 						<div
-							v-if="store.state.messageSearchPendingQuery && !offset"
+							v-if="store.messageSearchPendingQuery && !offset"
 							class="search-status"
 						>
 							Searching…
@@ -101,9 +98,16 @@ import Message from "../Message.vue";
 import MessageSearchForm from "../MessageSearchForm.vue";
 import DateMarker from "../DateMarker.vue";
 import {watch, computed, defineComponent, nextTick, ref, onMounted, onUnmounted} from "vue";
-import type {ClientMessage} from "../../js/types";
+import type {
+	ClientChan,
+	ClientNetwork,
+	NetChan,
+	ClientMention,
+	ClientMessage,
+} from "../../js/types";
 
-import {useStore} from "../../js/store";
+import {useMainStore} from "../../stores/main";
+import {useSettingsStore} from "../../stores/settings";
 import {useRoute, useRouter} from "vue-router";
 import {switchToChannel} from "../../js/router";
 import {SearchQuery} from "../../../shared/types/storage";
@@ -117,7 +121,8 @@ export default defineComponent({
 		MessageSearchForm,
 	},
 	setup() {
-		const store = useStore();
+		const store = useMainStore();
+		const settingsStore = useSettingsStore();
 		const route = useRoute();
 		const router = useRouter();
 
@@ -130,19 +135,19 @@ export default defineComponent({
 		const oldScrollTop = ref(0);
 		const oldChatHeight = ref(0);
 
-		const messages = computed(() => {
-			const results = store.state.messageSearchResults?.results;
+		const messages = computed<ClientMessage[]>(() => {
+			const results = store.messageSearchResults?.results;
 
 			if (!results) {
 				return [];
 			}
 
-			return results;
+			return results as ClientMessage[];
 		});
 
 		const chan = computed(() => {
 			const chanId = parseInt(String(route.params.id || ""), 10);
-			return store.getters.findChannel(chanId);
+			return store.findChannel(chanId) as NetChan | null;
 		});
 
 		const network = computed(() => {
@@ -166,7 +171,7 @@ export default defineComponent({
 				return;
 			}
 
-			store.commit("activeChannel", chan.value);
+			store.setActiveChannel(chan.value);
 		};
 
 		const closeSearch = () => {
@@ -189,8 +194,8 @@ export default defineComponent({
 
 		const clearSearchState = () => {
 			offset.value = 0;
-			store.commit("messageSearchResults", null);
-			store.commit("messageSearchPendingQuery", null);
+			store.setMessageSearchResults(null);
+			store.setMessageSearchPendingQuery(null);
 		};
 
 		const doSearch = () => {
@@ -205,7 +210,7 @@ export default defineComponent({
 				searchTerm: String(route.query.q || ""),
 				offset: offset.value,
 			};
-			store.commit("messageSearchPendingQuery", query);
+			store.setMessageSearchPendingQuery(query);
 			socket.emit("search", query);
 		};
 
@@ -225,7 +230,7 @@ export default defineComponent({
 				searchTerm: String(route.query.q || ""),
 				offset: offset.value,
 			};
-			store.commit("messageSearchPendingQuery", query);
+			store.setMessageSearchPendingQuery(query);
 			socket.emit("search", query);
 		};
 
@@ -308,6 +313,7 @@ export default defineComponent({
 			route,
 			offset,
 			store,
+			settingsStore,
 			setActiveChannel,
 			closeSearch,
 			shouldDisplayDateMarker,

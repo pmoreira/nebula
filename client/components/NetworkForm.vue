@@ -11,9 +11,7 @@
 				</template>
 				<template v-else>
 					Connect
-					<template
-						v-if="config?.lockNetwork && store?.state.serverConfiguration?.public"
-					>
+					<template v-if="config?.lockNetwork && store.serverConfiguration?.public">
 						to {{ defaults.name }}
 					</template>
 				</template>
@@ -175,7 +173,7 @@
 					</div>
 				</template>
 			</template>
-			<template v-else-if="config.lockNetwork && !store.state.serverConfiguration?.public">
+			<template v-else-if="config.lockNetwork && !store.serverConfiguration?.public">
 				<h2>Network settings</h2>
 				<div class="connect-row">
 					<label for="connect:name">Name</label>
@@ -254,7 +252,7 @@
 					placeholder="The Lounge - https://thelounge.chat"
 				/>
 			</div>
-			<template v-if="defaults.uuid && !store.state.serverConfiguration?.public">
+			<template v-if="defaults.uuid && !store.serverConfiguration?.public">
 				<div class="connect-row">
 					<label for="connect:commands">
 						Commands
@@ -290,7 +288,7 @@ the server tab on new connection"
 				</div>
 			</template>
 
-			<template v-if="store.state.serverConfiguration?.public">
+			<template v-if="store.serverConfiguration?.public">
 				<template v-if="config?.lockNetwork">
 					<div class="connect-row">
 						<label></label>
@@ -344,10 +342,7 @@ the server tab on new connection"
 						/>
 						Username + password (SASL PLAIN)
 					</label>
-					<label
-						v-if="!store.state.serverConfiguration?.public && defaults.tls"
-						class="opt"
-					>
+					<label v-if="!store.serverConfiguration?.public && defaults.tls" class="opt">
 						<input
 							:checked="defaults.sasl === 'external'"
 							type="radio"
@@ -441,7 +436,7 @@ the server tab on new connection"
 import RevealPassword from "./RevealPassword.vue";
 import SidebarToggle from "./SidebarToggle.vue";
 import {defineComponent, nextTick, PropType, ref, watch} from "vue";
-import {useStore} from "../js/store";
+import {useMainStore} from "../stores/main";
 import {ClientNetwork} from "../js/types";
 
 export type NetworkFormDefaults = Partial<ClientNetwork> & {
@@ -466,8 +461,8 @@ export default defineComponent({
 		disabled: Boolean,
 	},
 	setup(props) {
-		const store = useStore();
-		const config = ref(store.state.serverConfiguration);
+		const store = useMainStore();
+		const config = ref(store.serverConfiguration);
 		const previousUsername = ref(props.defaults?.username);
 		const displayPasswordField = ref(false);
 

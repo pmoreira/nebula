@@ -9,7 +9,7 @@ import {SharedConfiguration, LockedSharedConfiguration} from "../../shared/types
 
 const appName = document.title;
 
-enum DesktopNotificationState {
+export enum DesktopNotificationState {
 	Unsupported = "unsupported",
 	Blocked = "blocked",
 	NoHttps = "nohttps",
@@ -67,14 +67,17 @@ export const useMainStore = defineStore("main", () => {
 	// Getters
 	const highlightCount = computed(() => {
 		let count = 0;
+
 		for (const network of networks.value) {
 			for (const channel of network.channels) {
 				if (channel.muted) {
 					continue;
 				}
+
 				count += channel.highlight;
 			}
 		}
+
 		return count;
 	});
 
@@ -94,12 +97,14 @@ export const useMainStore = defineStore("main", () => {
 			if (network.uuid !== networkUuid) {
 				continue;
 			}
+
 			for (const channel of network.channels) {
 				if (channel.name === channelName) {
 					return {network, channel};
 				}
 			}
 		}
+
 		return null;
 	});
 
@@ -111,6 +116,7 @@ export const useMainStore = defineStore("main", () => {
 				}
 			}
 		}
+
 		return null;
 	});
 
@@ -120,6 +126,7 @@ export const useMainStore = defineStore("main", () => {
 				return network;
 			}
 		}
+
 		return null;
 	});
 
@@ -127,24 +134,30 @@ export const useMainStore = defineStore("main", () => {
 	function setAppLoaded() {
 		appLoaded.value = true;
 	}
+
 	function setActiveChannel(netChan: NetChan) {
 		activeChannel.value = netChan;
 	}
+
 	function setCurrentUserVisibleError(error: string | null) {
 		currentUserVisibleError.value = error;
 	}
+
 	function refreshDesktopNotificationState() {
 		desktopNotificationState.value = detectDesktopNotificationState();
 	}
 	function setIsAutoCompleting(val: boolean) {
 		isAutoCompleting.value = val;
 	}
+
 	function setIsConnected(val: boolean) {
 		isConnected.value = val;
 	}
+
 	function setNetworks(val: ClientNetwork[]) {
 		networks.value = val;
 	}
+
 	function setMentions(val: ClientMention[]) {
 		mentions.value = val;
 	}
@@ -163,47 +176,60 @@ export const useMainStore = defineStore("main", () => {
 	function setHasServiceWorker() {
 		hasServiceWorker.value = true;
 	}
+
 	function setPushNotificationState(val: string) {
 		pushNotificationState.value = val;
 	}
 	function setServerConfiguration(val: SharedConfiguration | LockedSharedConfiguration | null) {
 		serverConfiguration.value = val;
 	}
+
 	function setSessions(val: ClientSession[]) {
 		sessions.value = val;
 	}
+
 	function setSidebarOpen(val: boolean) {
 		sidebarOpen.value = val;
 	}
+
 	function setSidebarDragging(val: boolean) {
 		sidebarDragging.value = val;
 	}
+
 	function toggleSidebar() {
 		sidebarOpen.value = !sidebarOpen.value;
 	}
+
 	function toggleUserlist() {
 		userlistOpen.value = !userlistOpen.value;
 	}
+
 	function setUserlistOpen(val: boolean) {
 		userlistOpen.value = val;
 	}
+
 	function setVersionData(val: SharedChangelogData | null) {
 		versionData.value = val;
 	}
+
 	function setVersionStatus(
 		val: "loading" | "new-version" | "new-packages" | "up-to-date" | "error"
 	) {
 		versionStatus.value = val;
 	}
+
 	function setVersionDataExpired(val: boolean) {
 		versionDataExpired.value = val;
 	}
+
 	function setServerHasSettings(val: boolean) {
 		serverHasSettings.value = val;
 	}
+
 	function setMessageSearchPendingQuery(val: SearchQuery | null) {
 		messageSearchPendingQuery.value = val;
 	}
+
 	function setMessageSearchResults(val: {results: ClientMessage[]} | null) {
 		messageSearchResults.value = val;
 	}

@@ -17,7 +17,7 @@
 import {defineComponent} from "vue";
 import SidebarToggle from "../SidebarToggle.vue";
 import Navigation from "../Settings/Navigation.vue";
-import {useStore} from "../../js/store";
+import {useSettingsStore} from "../../stores/settings";
 
 export default defineComponent({
 	name: "Settings",
@@ -26,7 +26,7 @@ export default defineComponent({
 		Navigation,
 	},
 	setup() {
-		const store = useStore();
+		const settingsStore = useSettingsStore();
 
 		const onChange = (event: Event) => {
 			const ignore = ["old_password", "new_password", "verify_password"];
@@ -45,7 +45,7 @@ export default defineComponent({
 				value = (event.target as HTMLInputElement).value;
 			}
 
-			void store.dispatch("settings/update", {name, value, sync: true});
+			settingsStore.update(name, value, true);
 		};
 
 		return {
