@@ -1,6 +1,6 @@
 {
-	"name": "The Lounge",
-	"short_name": "The Lounge",
+	"name": "Nebula",
+	"short_name": "Nebula",
 	"description": "Self-hosted web IRC client",
 	"start_url": ".",
 	"display": "standalone",

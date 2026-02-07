@@ -251,7 +251,7 @@ class Config {
 		if (!fs.existsSync(manifestPath)) {
 			log.error(
 				`The client application was not built. Run ${colors.bold(
-					"NODE_ENV=production yarn build"
+					"npm run build"
 				)} to resolve this.`
 			);
 			process.exit(1);
