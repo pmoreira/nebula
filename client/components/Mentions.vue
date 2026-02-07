@@ -153,7 +153,7 @@ import localetime from "../js/helpers/localetime";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
 import {computed, watch, defineComponent, ref, onMounted, onUnmounted} from "vue";
-import {useStore} from "../js/store";
+import {useMainStore} from "../stores/main";
 import {ClientMention} from "../js/types";
 
 dayjs.extend(relativeTime);
@@ -165,22 +165,22 @@ export default defineComponent({
 		ParsedMessage,
 	},
 	setup() {
-		const store = useStore();
+		const store = useMainStore();
 		const isOpen = ref(false);
 		const isLoading = ref(false);
 		const resolvedMessages = computed(() => {
-			const messages = store.state.mentions.slice().reverse();
+			const messages = store.mentions.slice().reverse();
 
 			for (const message of messages) {
 				message.localetime = localetime(message.time);
-				message.channel = store.getters.findChannel(message.chanId);
+				message.channel = store.findChannel(message.chanId);
 			}
 
 			return messages.filter((message) => !message.channel?.channel.muted);
 		});
 
 		watch(
-			() => store.state.mentions,
+			() => store.mentions,
 			() => {
 				isLoading.value = false;
 			}
@@ -191,16 +191,17 @@ export default defineComponent({
 		};
 
 		const dismissMention = (message: ClientMention) => {
-			store.state.mentions.splice(
-				store.state.mentions.findIndex((m) => m.msgId === message.msgId),
-				1
-			);
+			const index = store.mentions.findIndex((m) => m.msgId === message.msgId);
+
+			if (index !== -1) {
+				store.mentions.splice(index, 1);
+			}
 
 			socket.emit("mentions:dismiss", message.msgId);
 		};
 
 		const dismissAllMentions = () => {
-			store.state.mentions = [];
+			store.setMentions([]);
 			socket.emit("mentions:dismiss_all");
 		};
 

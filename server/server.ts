@@ -371,9 +371,9 @@ function addSecurityHeaders(_req: Request, res: Response, next: NextFunction) {
 		"default-src 'none'", // default to nothing
 		"base-uri 'none'", // disallow <base>, has no fallback to default-src
 		"form-action 'self'", // 'self' to fix saving passwords in Firefox, even though login is handled in javascript
-		"connect-src 'self' ws: wss:", // allow self for polling; websockets
+		"connect-src 'self' ws: wss: https://static.cloudflareinsights.com", // allow self for polling; websockets; cloudflare
 		"style-src 'self' https: 'unsafe-inline'", // allow inline due to use in irc hex colors
-		"script-src 'self'", // javascript
+		"script-src 'self' 'unsafe-inline' https://static.cloudflareinsights.com", // javascript
 		"worker-src 'self'", // service worker
 		"manifest-src 'self'", // manifest.json
 		"font-src 'self' https:", // allow loading fonts from secure sites (e.g. google fonts)
