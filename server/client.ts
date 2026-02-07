@@ -630,7 +630,7 @@ class Client {
 			typeof subscription.keys.p256dh !== "string" ||
 			typeof subscription.keys.auth !== "string"
 		) {
-			session.pushSubscription = null;
+			session.pushSubscription = undefined;
 			return;
 		}
 
