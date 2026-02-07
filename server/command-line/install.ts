@@ -9,7 +9,7 @@ import {Command} from "commander";
 import {FullMetadata} from "package-json";
 
 type CustomMetadata = FullMetadata & {
-	thelounge: {
+	nebula: {
 		supports: string;
 	};
 };
@@ -40,7 +40,7 @@ program
 
 		if (packageName.startsWith("file:")) {
 			isLocalFile = true;
-			// our yarn invocation sets $HOME to the cachedir, so we must expand ~ now
+			// our npm invocation sets $HOME to the cachedir, so we must expand ~ now
 			// else the path will be invalid when npm expands it.
 			packageName = expandTildeInLocalPath(packageName);
 			readFile = fspromises
@@ -72,23 +72,23 @@ program
 			.then((json: CustomMetadata) => {
 				const humanVersion = isLocalFile ? packageName : `${json.name} v${json.version}`;
 
-				if (!("thelounge" in json)) {
-					log.error(`${colors.red(humanVersion)} does not have The Lounge metadata.`);
+				if (!("nebula" in json)) {
+					log.error(`${colors.red(humanVersion)} does not have Nebula metadata.`);
 
 					process.exit(1);
 				}
 
 				if (
-					json.thelounge.supports &&
-					!semver.satisfies(Helper.getVersionNumber(), json.thelounge.supports, {
+					json.nebula.supports &&
+					!semver.satisfies(Helper.getVersionNumber(), json.nebula.supports, {
 						includePrerelease: true,
 					})
 				) {
 					log.error(
 						`${colors.red(
 							humanVersion
-						)} does not support The Lounge v${Helper.getVersionNumber()}. Supported version(s): ${
-							json.thelounge.supports
+						)} does support Nebula v${Helper.getVersionNumber()}. Supported version(s): ${
+							json.nebula.supports
 						}`
 					);
 
@@ -96,16 +96,14 @@ program
 				}
 
 				log.info(`Installing ${colors.green(humanVersion)}...`);
-				const yarnVersion = isLocalFile ? packageName : `${json.name}@${json.version}`;
-				return Utils.executeYarnCommand("add", "--exact", yarnVersion)
+				const npmVersion = isLocalFile ? packageName : `${json.name}@${json.version}`;
+				return Utils.executePackageCommand("install", "--save-exact", npmVersion)
 					.then(() => {
 						log.info(`${colors.green(humanVersion)} has been successfully installed.`);
 
 						if (isLocalFile) {
-							// yarn v1 is buggy if a local filepath is used and doesn't update
-							// the lockfile properly. We need to run an install in that case
-							// even though that's supposed to be done by the add subcommand
-							return Utils.executeYarnCommand("install").catch((err) => {
+							// npm might need a full install to link correctly in some cases
+							return Utils.executePackageCommand("install").catch((err) => {
 								throw `Failed to update lockfile after package install ${err}`;
 							});
 						}

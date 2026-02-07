@@ -103,96 +103,36 @@ class Utils {
 		return memo;
 	}
 
-	static executeYarnCommand(command: string, ...parameters: string[]) {
-		const yarn = require.resolve("yarn/bin/yarn.js");
+	static executePackageCommand(command: string, ...parameters: string[]) {
 		const packagesPath = Config.getPackagesPath();
-		const cachePath = path.join(packagesPath, "package_manager_cache");
-
-		const staticParameters = [
-			"--cache-folder",
-			cachePath,
-			"--cwd",
-			packagesPath,
-			"--json",
-			"--ignore-scripts",
-			"--non-interactive",
-		];
-
-		const env = {
-			// We only ever operate in production mode
-			NODE_ENV: "production",
-
-			// If The Lounge runs from a user that does not have a home directory,
-			// yarn may fail when it tries to read certain folders,
-			// we give it an existing folder so the reads do not throw a permission error.
-			// Yarn uses os.homedir() to figure out the path, which internally reads
-			// from the $HOME env on unix. On Windows it uses $USERPROFILE, but
-			// the user folder should always exist on Windows, so we don't set it.
-			HOME: cachePath,
-		};
 
 		return new Promise((resolve, reject) => {
 			let success = false;
-			const add = spawn(
-				process.execPath,
-				[yarn, command, ...staticParameters, ...parameters],
-				{env: env}
-			);
-
-			add.stdout.on("data", (data) => {
-				data.toString()
-					.trim()
-					.split("\n")
-					.forEach((line: string) => {
-						try {
-							const json = JSON.parse(line);
-
-							if (json.type === "success") {
-								success = true;
-							}
-						} catch (e: any) {
-							// Stdout buffer has limitations and yarn may print
-							// big package trees, for example in the upgrade command
-							// See https://github.com/thelounge/thelounge/issues/3679
-						}
-					});
+			const npm = process.platform === "win32" ? "npm.cmd" : "npm";
+			const proc = spawn(npm, [command, "--prefix", packagesPath, ...parameters], {
+				env: {
+					...process.env,
+					NODE_ENV: "production",
+				},
 			});
 
-			add.stderr.on("data", (data) => {
-				data.toString()
-					.trim()
-					.split("\n")
-					.forEach((line: string) => {
-						try {
-							const json = JSON.parse(line);
-
-							switch (json.type) {
-								case "error":
-									log.error(json.data);
-									break;
-								case "warning":
-									// this includes pointless things like "ignored scripts due to flag"
-									// so let's hide it
-									break;
-							}
-
-							return;
-						} catch (e: any) {
-							// we simply fall through and log at debug... chances are there's nothing the user can do about it
-							// as it includes things like deprecation warnings, but we might want to know as developers
-						}
-
-						log.debug(line);
-					});
+			proc.stdout.on("data", (data) => {
+				log.debug(data.toString());
+				// Basic heuristic for npm success if needed, or just rely on exit code
+				success = true;
 			});
 
-			add.on("error", (e) => {
+			proc.stderr.on("data", (data) => {
+				log.error(data.toString());
+			});
+
+			proc.on("error", (e) => {
 				log.error(`${e.message}:`, e.stack || "");
 				process.exit(1);
 			});
 
-			add.on("close", (code) => {
-				if (!success || code !== 0) {
+			proc.on("close", (code) => {
+				if (code !== 0) {
 					return reject(code);
 				}
 

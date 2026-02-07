@@ -70,7 +70,7 @@ export default async function (
 		dev: false,
 	}
 ) {
-	log.info(`The Lounge ${colors.green(Helper.getVersion())} \
+	log.info(`Nebula ${colors.green(Helper.getVersion())} \
 (Node.js ${colors.green(process.versions.node)} on ${colors.green(process.platform)} ${
 		process.arch
 	})`);

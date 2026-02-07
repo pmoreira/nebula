@@ -18,9 +18,7 @@ program
 
 		if (users.length === 0) {
 			log.info(
-				`There are currently no users. Create one with ${colors.bold(
-					"thelounge add <name>"
-				)}.`
+				`There are currently no users. Create one with ${colors.bold("nebula add <name>")}.`
 			);
 			return;
 		}

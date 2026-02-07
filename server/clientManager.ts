@@ -47,9 +47,7 @@ class ClientManager {
 
 		if (users.length === 0) {
 			log.info(
-				`There are currently no users. Create one with ${colors.bold(
-					"thelounge add <name>"
-				)}.`
+				`There are currently no users. Create one with ${colors.bold("nebula add <name>")}.`
 			);
 
 			return;
@@ -199,7 +197,7 @@ class ClientManager {
 						"as the correct user that owns the config folder."
 				);
 				log.warn(
-					"See https://thelounge.chat/docs/usage#using-the-correct-system-user for more information."
+					"See https://nebula.chat/docs/usage#using-the-correct-system-user for more information."
 				);
 				fs.chownSync(userPath, userFolderStat.uid, userFolderStat.gid);
 			}

@@ -55,7 +55,7 @@ program
 			return;
 		}
 
-		return Utils.executeYarnCommand(command, ...params)
+		return Utils.executePackageCommand(command, ...params)
 			.then(() => {
 				log.info("Package(s) have been successfully upgraded.");
 			})

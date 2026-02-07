@@ -34,7 +34,7 @@ mkdir -p "$NEBULA_HOME_DIR"
 
 if [ ! -f "$NEBULA_HOME_DIR/config.js" ]; then
     echo "Creating default configuration..."
-    nebula config > "$NEBULA_HOME_DIR/config.js" || true
+    cp defaults/config.js "$NEBULA_HOME_DIR/config.js"
 fi
 
 echo "Nebula has been installed successfully!"
