@@ -32,9 +32,30 @@ NEBULA_HOME_DIR=$(cat .nebula_home | sed "s|~|$HOME|")
 echo "Initializing configuration directory at $NEBULA_HOME_DIR..."
 mkdir -p "$NEBULA_HOME_DIR"
 
-if [ ! -f "$NEBULA_HOME_DIR/config.js" ]; then
+if [ ! -s "$NEBULA_HOME_DIR/config.js" ]; then
     echo "Creating default configuration..."
     cp defaults/config.js "$NEBULA_HOME_DIR/config.js"
+fi
+
+# 10. Automatic HTTPS Detection (Let's Encrypt)
+echo "Checking for Let's Encrypt certificates..."
+if [ -d "/etc/letsencrypt/live" ]; then
+    CERT_PATH=$(sudo find /etc/letsencrypt/live -name "fullchain.pem" | head -n 1)
+    if [ -n "$CERT_PATH" ]; then
+        KEY_PATH=$(echo "$CERT_PATH" | sed 's/fullchain\.pem/privkey.pem/')
+        echo "Detected Let's Encrypt certificate at: $CERT_PATH"
+        read -p "Do you want to enable HTTPS automatically? [y/N] " -n 1 -r
+        echo
+        if [[ $REPLY =~ ^[Yy]$ ]]; then
+            echo "Updating config.js to enable HTTPS..."
+            # Enable https: enable: true
+            sed -i "s/enable: false,/enable: true,/g" "$NEBULA_HOME_DIR/config.js"
+            # Update paths
+            sed -i "s|key: \"\",|key: \"$KEY_PATH\",|g" "$NEBULA_HOME_DIR/config.js"
+            sed -i "s|certificate: \"\",|certificate: \"$CERT_PATH\",|g" "$NEBULA_HOME_DIR/config.js"
+            echo "HTTPS has been enabled. Please ensure Nebula has read access to these files."
+        fi
+    fi
 fi
 
 echo "Nebula has been installed successfully!"
