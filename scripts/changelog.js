@@ -1,5 +1,5 @@
 /*
-This (very The Lounge-custom) script is a helper to generate changelog entries.
+This (very Nebula-custom) script is a helper to generate changelog entries.
 
 Note that it is not meant to produce fully-automated changelogs like other tools
 do, but merely prepare a changelog entry without risks of mistyping a URL or
@@ -155,7 +155,7 @@ Please refer to the commit list given above for a complete list of changes, or w
 As with all pre-releases, this version requires explicit use of the \`next\` tag to be installed:
 
 \`\`\`sh
-yarn global add thelounge@next
+npm install -g nebula@next
 \`\`\`
 `;
 }
@@ -215,7 +215,7 @@ ${printList(items.documentation)}`
 ${
 	items.websiteDocumentation.length === 0
 		? ""
-		: `On the [website repository](https://github.com/thelounge/thelounge.github.io):
+		: `On the [website repository](https://github.com/nebula-chat/nebula.github.io):
 
 ${printList(items.websiteDocumentation)}`
 }
@@ -255,7 +255,7 @@ function stableVersion(prereleaseVersion) {
 
 // Generates a compare-view URL between 2 versions of The Lounge
 function fullChangelogUrl(v1, v2) {
-	return `https://github.com/thelounge/thelounge/compare/v${v1}...v${v2}`;
+	return `https://github.com/nebula-chat/nebula/compare/v${v1}...v${v2}`;
 }
 
 // This class is a facade to fetching details about commits / PRs / tags / etc.

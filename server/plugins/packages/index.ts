@@ -19,7 +19,7 @@ const packageMap = new Map<string, Package>();
 
 export type PackageInfo = {
 	packageName: string;
-	thelounge?: {supports: string};
+	nebula?: {supports: string};
 	version: string;
 	type?: string;
 	files?: string[];
@@ -123,17 +123,17 @@ function loadPackage(packageName: string) {
 
 		packageInfo = JSON.parse(fs.readFileSync(path.join(packagePath, "package.json"), "utf-8"));
 
-		if (!packageInfo.thelounge) {
-			throw "'thelounge' is not present in package.json";
+		if (!packageInfo.nebula) {
+			throw "'nebula' is not present in package.json";
 		}
 
 		if (
-			packageInfo.thelounge.supports &&
-			!semver.satisfies(Helper.getVersionNumber(), packageInfo.thelounge.supports, {
+			packageInfo.nebula.supports &&
+			!semver.satisfies(Helper.getVersionNumber(), packageInfo.nebula.supports, {
 				includePrerelease: true, // our pre-releases should respect the semver guarantees
 			})
 		) {
-			throw `v${packageInfo.version} does not support this version of The Lounge. Supports: ${packageInfo.thelounge.supports}`;
+			throw `v${packageInfo.version} does not support this version of Nebula. Supports: ${packageInfo.nebula.supports}`;
 		}
 
 		packageFile = require(packagePath);
@@ -149,7 +149,7 @@ function loadPackage(packageName: string) {
 
 	const version = packageInfo.version;
 	packageInfo = {
-		...packageInfo.thelounge,
+		...packageInfo.nebula,
 		packageName: packageName,
 		version,
 	};
@@ -176,7 +176,7 @@ function loadPackage(packageName: string) {
 
 		log.info(
 			"There are packages using the experimental plugin API. " +
-				"Be aware that this API is not yet stable and may change in future The Lounge releases."
+				"Be aware that this API is not yet stable and may change in future Nebula releases."
 		);
 	}
 }
@@ -223,16 +223,7 @@ async function outdated(cacheTimeout = TIME_TO_LIVE) {
 	const packagesPath = Config.getPackagesPath();
 	const packagesConfig = path.join(packagesPath, "package.json");
 	const packagesList = JSON.parse(fs.readFileSync(packagesConfig, "utf-8")).dependencies;
-	const argsList = [
-		"outdated",
-		"--latest",
-		"--json",
-		"--production",
-		"--ignore-scripts",
-		"--non-interactive",
-		"--cwd",
-		packagesPath,
-	];
+	const argsList = ["outdated", "--json"];
 
 	// Check if the configuration file exists
 	if (!Object.entries(packagesList).length) {
@@ -253,7 +244,7 @@ async function outdated(cacheTimeout = TIME_TO_LIVE) {
 
 	// If we get an error from calling outdated and the code isn't 0, then there are no outdated packages
 	// TODO: was (...argsList), verify this works
-	await Utils.executeYarnCommand(command, ...params)
+	await Utils.executePackageCommand(command, ...params)
 		.then(() => updateOutdated(false))
 		.catch((code) => updateOutdated(code !== 0));
 

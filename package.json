@@ -32,23 +32,21 @@
     "githooks-install": "git config core.hooksPath scripts/git-hooks"
   },
   "keywords": [
-    "lounge",
+    "nebula",
     "browser",
     "web",
     "chat",
     "client",
     "irc",
-    "server",
-    "thelounge"
+    "server"
   ],
   "license": "MIT",
   "engines": {
     "node": ">=18.0.0"
   },
   "files": [
-    "./.thelounge_home",
+    "./.nebula_home",
     "./index.js",
-    "./yarn.lock",
     "./client/index.html.tpl",
     "./dist/package.json",
     "./dist/**/*.js",
@@ -81,8 +79,7 @@
     "tlds": "1.228.0",
     "ua-parser-js": "1.0.39",
     "uuid": "8.3.2",
-    "web-push": "3.4.5",
-    "yarn": "1.22.22"
+    "web-push": "3.4.5"
   },
   "optionalDependencies": {
     "sqlite3": "5.1.7"
